@@ -1,6 +1,40 @@
+/*!
+ * Minlate JS - v1.0 - 10/10/2012
+ * 
+ * Copyright (c) 2012 "Paislee" Caleb Sotelo
+ * Dual licensed under the MIT and GPL licenses.
+ * http://dev.paislee.net/about/license/
+ */
+
+/**
+ * Example: paislee.net/minlate/minlate-test.html
+ * 
+ * minlate A miniature, logic-less templating function.
+ * 
+ * This function requires two parameters. The first is a String value
+ * representing the ID of a template node in the DOM. This node must have the
+ * class 'minlate'. The second parameter is a simple Object mapping keys to
+ * String values. The keys should correspond to places in the template markup
+ * specified with {key}, and map[key] is the replacement value. Minlate
+ * replaces all {keys} in the tempalate with values by specified by map, and
+ * returns the updated DOM node.
+ * 
+ * Notes:
+ * - If no ID is provided, the function returns null.
+ * - If a key in the template is absent from map, it is replaced with "".
+ * - This function may be called any number of times; the template will be
+ *   updated in the DOM.
+ * 
+ * @param {String} id The ID of the template
+ * @param {Object} map A simple map of keys to String replacement values
+ * @param {String} [start="{"] Optionally override the default start character
+ * @param {String} [end="}"] Optionally override the default end character
+ *  
+ * @return The DOM node representing the rendered template
+ */
 var minlate = function(d) {
 
-    var cssHide = ".template{display:none !important;}",
+    var cssHide = ".minlate{display:none !important;}",
         cssEl = d.createElement("style"),
         mem = {}; // store used templates outside of DOM
     
@@ -58,7 +92,7 @@ var minlate = function(d) {
         
         // add rendered element to the DOM and save the template if necessary 
         copy.innerHTML = res;
-        copy.className = copy.className.replace(/\btemplate\b/,"");
+        copy.className = copy.className.replace(/\bminlate\b/,"");
         mem[id] = mem[id] || source;
         inDOM.parentNode.replaceChild(copy, inDOM);
         return copy;
