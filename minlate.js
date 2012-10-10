@@ -9,28 +9,36 @@
 /**
  * Example: paislee.net/minlate/minlate-test.html
  * 
- * minlate A miniature, logic-less templating function.
+ * minlate A miniature, logic-less templating function written in JavaScript.
  * 
  * This function requires two parameters. The first is a String value
  * representing the ID of a template node in the DOM. This node must have the
  * class 'minlate'. The second parameter is a simple Object mapping keys to
  * String values. The keys should correspond to places in the template markup
  * specified with {key}, and map[key] is the replacement value. Minlate
- * replaces all {keys} in the tempalate with values by specified by map, and
+ * replaces all {keys} in the template with values by specified by map, and
  * returns the updated DOM node.
  * 
+ * The third and fourth parameters are optional, and should be single character
+ * Strings. If provided, these override the default start and end tokens for
+ * replacement values. The defaults are open and close curly braces,
+ * respectively.
+ * 
  * Notes:
+ * - Templates are initially hidden, becoming visible once rendered.
  * - If no ID is provided, the function returns null.
- * - If a key in the template is absent from map, it is replaced with "".
+ * - If a key in the template is absent from the map, it is replaced with the
+ *   empty string.
  * - This function may be called any number of times; the template will be
  *   updated in the DOM.
  * 
- * @param {String} id The ID of the template
+ * @param {String} id The ID of the template to be rendered
  * @param {Object} map A simple map of keys to String replacement values
  * @param {String} [start="{"] Optionally override the default start character
  * @param {String} [end="}"] Optionally override the default end character
  *  
- * @return The DOM node representing the rendered template
+ * @return The DOM node representing the rendered template, or null if no
+ *  template is rendered
  */
 var minlate = function(d) {
 
