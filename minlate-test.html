@@ -2,7 +2,7 @@
 <html>
   <head>
     <title>Minlate JS Tests</title>
-    <script type="text/javascript" src="minlate.min.js"></script>
+    <script type="text/javascript" src="minlate.js"></script>
     <style>
       h2 {
         font-size: 1.1em;
@@ -31,7 +31,7 @@
       <button id="template1-render">Render</button>
     </div>
     <h2>Result</h2>
-    <div id="template1" class="contact minlate">
+    <div id="template1" class="contact minlate hi">
       <h3>{first} {last}</h3>
       <b>Email:</b> <span>{email}</span><br>
       <b>Phone:</b> <span>{phone}</span>
@@ -51,11 +51,15 @@
       <p>Function to render template on click:</p>
       <pre>
 var renderTemplate1 = function() {      
-  minlate("template1", {
-    first: find("template1-first").value,
-    last: find("template1-last").value,
-    email: find("template1-email").value,
-    phone: find("template1-phone").value
+  minlate(
+    id : "template1",
+    values : {
+      first: find("template1-first").value,
+      last: find("template1-last").value,
+      email: find("template1-email").value,
+      phone: find("template1-phone").value
+    },
+    inPlace : true
   });
 };
       </pre>
@@ -65,11 +69,15 @@ var renderTemplate1 = function() {
       (function(find) {
         
         var renderTemplate1 = function() {        
-          minlate("template1", {
-            first: find("template1-first").value,
-            last: find("template1-last").value,
-            email: find("template1-email").value,
-            phone: find("template1-phone").value
+          minlate({
+            id : "template1",
+            values : {
+              first: find("template1-first").value,
+              last: find("template1-last").value,
+              email: find("template1-email").value,
+              phone: find("template1-phone").value
+            },
+            inPlace : true
           });
         };
         
