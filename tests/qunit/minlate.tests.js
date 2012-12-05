@@ -1,6 +1,6 @@
 (function() {
   
-  module("Minlate-js Tests");
+  module("Rendering tests");
   
   test("Render simple template out of DOM", function() {
     
@@ -45,6 +45,23 @@
       
       equal(actual, expected, "Expect correctly rendered template.");
     });
+    
+  test("Render simple template with array value", function() {
+    
+    var template = "<p>Hello {key}!</p>",
+        expected = "<p>Hello World!</p>",
+        actual;
+        
+    actual = minlate({
+      templateString : template,
+      values : {
+        key : ["World","ignore"]
+      }
+    });
+    
+    equal(actual, expected, "Expect correctly rendered template.");
+    
+  });
   
   test("Render simple template out of DOM, override replacement symbols", function() {
     
@@ -65,7 +82,7 @@
      
   });
   
-  test("Render repeat template out of DOM", function() {
+  test("Render group template out of DOM", function() {
     
     var template = "Hello test[, {number}]!",
         expected = "Hello test, one, two, three!",
@@ -82,7 +99,7 @@
     
   });
   
-  test("Render repeat template, multiple values", function() {
+  test("Render group template, multiple values", function() {
     
     var template = "Hello test[, {numbers} AND {colors}]!",
         expected = "Hello test, one AND red, two AND orange, three AND yellow!",
@@ -98,6 +115,219 @@
     
     equal(actual, expected, "Expect correctly rendered template.");
     
+  });
+  
+  test("Render group template, multiple groups", function() {
+    
+    var template = "Hello[ {numbers}] AND[ {colors}].",
+        expected = "Hello one two three AND red orange yellow.",
+        actual;
+        
+    actual = minlate({
+      templateString : template,
+      values : {
+        colors : ["red", "orange", "yellow"],
+        numbers : ["one", "two", "three"]
+      }
+    });
+    
+    equal(actual, expected, "Expect correctly rendered template.");
+    
+  });
+  
+  test("Render group template without value list", function() {
+    
+    var template = "Hello test[, {number}]!",
+        expected = "Hello test, one!",
+        actual;
+        
+    actual = minlate({
+      templateString : template,
+      values : {
+        number : "one"
+      }
+    });
+    
+    equal(actual, expected, "Expect correctly rendered template.");
+    
+  });
+  
+  test("Render group template, multiple values mixed type", function() {
+    
+    var template = "Hello test[, {numbers} AND {colors}]!",
+        expected = "Hello test, one AND red, one AND orange, one AND yellow!",
+        actual;
+        
+    actual = minlate({
+      templateString : template,
+      values : {
+        colors : ["red", "orange", "yellow"],
+        numbers : "one"
+      }
+    });    
+    equal(actual, expected, "Expect correctly rendered template.");
+    
+  });
+  
+  test("Render group template, multiple groups and values", function() {
+    
+    var template = "Hello test[, {numbers} AND {colors}]:[, {numbers} AND {colors}]!",
+        expected = "Hello test, one AND red, two AND orange, three AND yellow:, one AND red, two AND orange, three AND yellow!",
+        actual;
+        
+    actual = minlate({
+      templateString : template,
+      values : {
+        colors : ["red", "orange", "yellow"],
+        numbers : ["one", "two", "three"]
+      }
+    });
+    
+    equal(actual, expected, "Expect correctly rendered template.");
+    
+  });
+  
+  module("Escape character");
+  
+  test("Render simple template with escape character", function() {
+    
+    var template = "<p>\\{Hello {key}!</p>",
+        expected = "<p>{Hello World!</p>",
+        actual;
+        
+    actual = minlate({
+      templateString : template,
+      values : {
+        key : "World"
+      }
+    });
+    
+    equal(actual, expected, "Expect correctly rendered template.");
+    
+  });
+  
+  test("Render simple template with escape character override", function() {
+    
+    var template = "<p>${Hello {key}!</p>",
+        expected = "<p>{Hello World!</p>",
+        actual;
+        
+    actual = minlate({
+      templateString : template,
+      escapeChar : "$",
+      values : {
+        key : "World"
+      }
+    });
+    
+    equal(actual, expected, "Expect correctly rendered template.");
+    
+  });
+  
+  test("Render group template with escape char.", function() {
+    
+    var template = "Hello test[, \\[\\]{number}]!",
+        expected = "Hello test, []one, []two, []three!",
+        actual;
+                
+    actual = minlate({
+      templateString : template,
+      values : {
+        number : ["one", "two", "three"]
+      }
+    });
+    
+    equal(actual, expected, "Expect correctly rendered template.");
+    
+  });
+  
+  module("Errors");
+  
+  test("No template string", function() {    
+    var callMinlate = function() {
+      minlate({      
+        values : {
+          key : "World"
+        }
+      });
+    };    
+    raises(callMinlate, "Expect error thrown.");    
+  });
+  
+  test("Unopened value in template string", function() {    
+    var callMinlate = function() {
+      minlate({
+        templateString : "Hello }world"
+      });
+    };    
+    raises(callMinlate, "Expect error thrown.");    
+  });
+  
+  test("Unclosed value in template string", function() {    
+    var callMinlate = function() {
+      minlate({
+        templateString : "Hello {world"
+      });
+    };    
+    raises(callMinlate, "Expect error thrown.");    
+  });
+  
+  test("Unopened value in group", function() {    
+    var callMinlate = function() {
+      minlate({
+        templateString : "He[llo }wor]ld"
+      });
+    };    
+    raises(callMinlate, "Expect error thrown.");    
+  });
+  
+  test("Unclosed value in group", function() {    
+    var callMinlate = function() {
+      minlate({
+        templateString : "He[llo {wor]ld"
+      });
+    };    
+    raises(callMinlate, "Expect error thrown.");    
+  });
+  
+  test("Unopened group in template string", function() {    
+    var callMinlate = function() {
+      minlate({
+        templateString : "Hello ]world"
+      });
+    };    
+    raises(callMinlate, "Expect error thrown.");    
+  });
+  
+  test("Unclosed group in template string", function() {    
+    var callMinlate = function() {
+      minlate({
+        templateString : "Hello [world"
+      });
+    };    
+    raises(callMinlate, "Expect error thrown.");    
+  });
+  
+  test("Duplicate special characters", function() {    
+    var callMinlate = function() {
+      minlate({
+        templateString : "Hello {world}.",
+        escapeChar : "{"
+      });
+    };    
+    raises(callMinlate, "Expect error thrown.");    
+  });
+  
+  test("Duplicate special characters", function() {    
+    var callMinlate = function() {
+      minlate({
+        templateString : "Hello {world}.",
+        escapeChar : "$",
+        startChar : "$",
+        grpStartChar : "$"
+      });
+    };    
+    raises(callMinlate, "Expect error thrown.");    
   });
 
 })();
