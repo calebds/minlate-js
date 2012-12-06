@@ -1,5 +1,5 @@
 /*!
- * Minlate JS - v1.0 - 10/10/2012
+ * Minlate JS - v2.0 - 12/4/2012
  * 
  * Copyright (c) 2012 "Paislee" Caleb Sotelo
  * Dual licensed under the MIT and GPL licenses.
@@ -11,99 +11,162 @@
  * 
  * minlate A miniature, logic-less templating function written in JavaScript.
  * 
- * This function requires two parameters. The first is a String value
- * representing the ID of a template node in the DOM. This node must have the
- * class 'minlate'. The second parameter is a simple Object mapping keys to
- * String values. The keys should correspond to places in the template markup
- * specified with {key}, and map[key] is the replacement value. Minlate
- * replaces all {keys} in the template with values by specified by map, and
- * returns the updated DOM node.
- * 
- * The third and fourth parameters are optional, and should be single character
- * Strings. If provided, these override the default start and end tokens for
- * replacement values. The defaults are open and close curly braces,
- * respectively.
- * 
- * Notes:
- * - Templates are initially hidden, becoming visible once rendered.
- * - If no ID is provided, the function returns null.
- * - If a key in the template is absent from the map, it is replaced with the
- *   empty string.
- * - This function may be called any number of times; the template will be
- *   updated in the DOM.
- * 
- * @param {String} id The ID of the template to be rendered
- * @param {Object} map A simple map of keys to String replacement values
- * @param {String} [start="{"] Optionally override the default start character
- * @param {String} [end="}"] Optionally override the default end character
- *  
- * @return The DOM node representing the rendered template, or null if no
- *  template is rendered
+ *
  */
-var minlate = function(d) {
+var minlate = function(document) {
 
     var cssHide = ".minlate{display:none !important;}",
-        cssEl = d.createElement("style"),
-        mem = {}; // store used templates outside of DOM
-    
-    // add css rule to hide all templates
-    cssEl.type = "text/css";
-    if (cssEl.styleSheet) {
-        cssEl.styleSheet.cssText = cssHide;
-    } else {
-        cssEl.appendChild(d.createTextNode(cssHide));
-    }
-    d.getElementsByTagName("head")[0].appendChild(cssEl);
+        cssEl = document.createElement("style"),
+        CLASS_NAME = "className",
+        mem = {}, // store used templates outside of DOM
+        render = function(template, values, startChar, endChar, groupStartChar, groupEndChar, escChar) {
+          
+          var buf = "",
+              bufOpen = 0,
+              grpStartIndex,// index of the beginning of current group
+              grpCount = 0,// number of times through current group
+              grpOpen = 0,// true if a group is being processed
+              grpDone = 0,// true if we exhausted any value lists within a group
+              result = "",// the final result string
+              currentChar = "",// the current character of the input template
+              values = values || {},// the replacement value map, or empty map
+              value,
+              noArrays = 1;
+          
+          // process template char by char
+          for (var i = 0; i < template.length; i++) {
+            currentChar = template.charAt(i);            
+            switch (currentChar) {
+              case startChar:// start capturing a value
+                bufOpen && throwErr("",i,currentChar);
+                bufOpen = 1;
+                break;
+              case endChar:// done capturing a value
+                !bufOpen && throwErr("",i,currentChar);
+                value = values[buf] || "";
+                if (value instanceof Array) {// an array was provided
+                  value = value[grpCount];// get the value
+                  if (grpOpen && (grpCount >= values[buf].length-1)) grpDone = 1;
+                  // no more elements, mark group exhausted
+                  noArrays = 0;
+                } else noArrays = 1;// prevent infinite loop
+                result += value || "";// add retrieved value to end result
+                bufOpen = 0;// clear the value buffer
+                buf = "";
+                break;
+              case groupStartChar:// beginning of a group
+                grpOpen && throwErr("",i,currentChar);
+                grpOpen = 1;// open group state
+                grpStartIndex = i;// remember the starting index of this group
+                break;
+              case groupEndChar:// the end of a group
+                !grpOpen && throwErr("",i,currentChar);
+                if (noArrays) grpDone = 1;                
+                if (!grpDone) {
+                  i = grpStartIndex - 1;// start group again
+                  grpCount++;
+                } else {// otherwise this group is done..
+                  grpDone = grpCount = 0;// reset everything
+                }
+                grpOpen = 0;// do this every time for error checking
+                break;
+              case escChar:
+                currentChar = template.charAt(++i);// jump ahead one
+              default:
+                if (bufOpen) buf += currentChar;
+                else result += currentChar;                
+             }
+          }
+          if (grpOpen || bufOpen) throwErr();// something didn't close
+          return result;
+        },
+        throwErr = function(message, index, token) {
+          var suffix = "";
+          if (typeof index != "undefined") suffix += " at index " + index;
+          if (typeof token != "undefined") suffix += ": '" + token + "'";
+          throw new Error((message || "Invalid template") + suffix + ".");
+        }
+        
+        cssEl.type = "text/css";
+        if (cssEl.styleSheet) {
+            cssEl.styleSheet.cssText = cssHide;
+        } else {
+            cssEl.appendChild(document.createTextNode(cssHide));
+        }
+        document.getElementsByTagName("head")[0].appendChild(cssEl);
     
     // public interface
-    return function(id, map, start, end) {
-        
-        var buf = "",
-            bufOpen = 0,
-            ch = "",
-            res = "",
-            start = start || "{",
-            end = end || "}",
-            inDOM = d.getElementById(id),
-            source = mem[id] || inDOM,
-            copy = null,
-            tmplt = null,
-            map = map || {};
-            
-        if (source) {
-          copy = source.cloneNode();
-          tmplt = source.innerHTML;
-        } else {
-          return null;
-        }
+    // opts:
+    //   templateString
+    //   id
+    //   values
+    //   inPlace
+    //   startChar
+    //   endChar
+    //   groupStartChar
+    //   groupEndChar
+    //   escapeChar
+    return function(opts) {
       
-        // process template char by char, look for tokens
-        for (var i = 0; i < tmplt.length; i++) {
-            ch = tmplt.charAt(i);
-            switch (ch) {
-                case start:
-                    bufOpen = 1;
-                    break;
-                case end:
-                    res += map[buf] || "";
-                    bufOpen = 0;
-                    buf = "";
-                    break;
-                default:
-                    if (bufOpen) {
-                        buf += ch;
-                    } else {
-                        res += ch;
-                    }
-             }
+      var inDOMNode,
+          sourceNode,
+          copyNode,
+          templateStr       = opts.templateString,
+          values            = opts.values || {},
+          savedNodes        = {},
+          startChar         = opts.startChar || "{",
+          endChar           = opts.endChar || "}",
+          groupStartChar    = opts.groupStartChar || "[",
+          groupEndChar      = opts.groupEndChar || "]",
+          escChar           = opts.escapeChar || "\\",
+          specialCharMap    = {},
+          specialCharCount  = 0;
+      
+      // make sure special characters are unique
+      specialCharMap[startChar]       = ++specialCharCount;
+      specialCharMap[endChar]         = ++specialCharCount;
+      specialCharMap[groupStartChar]  = ++specialCharCount;
+      specialCharMap[groupEndChar]    = ++specialCharCount;
+      specialCharMap[escChar]         = ++specialCharCount;      
+      for (var specialChar in specialCharMap) {
+        specialCharMap.hasOwnProperty(specialChar) && specialCharCount--;
+      }
+      if (specialCharCount) throwErr("Special characters must be unique.");
+      
+      if (opts.id) {// render a template specified in the DOM
+        inDOMNode = document.getElementById(opts.id);
+        sourceNode = savedNodes[opts.id] || inDOMNode;
+        if (sourceNode && sourceNode[CLASS_NAME].match(/\bminlate\b/)) {
+          copyNode = sourceNode.cloneNode();
+          copyNode.innerHTML = render(
+            sourceNode.innerHTML,
+            values,
+            startChar,
+            endChar,
+            groupStartChar,
+            groupEndChar,
+            escChar
+          );
+          copyNode[CLASS_NAME] = copyNode[CLASS_NAME].replace(/\bminlate\b/,"");
+          savedNodes[opts.id] = sourceNode;
+          opts.inPlace && inDOMNode.parentNode.replaceChild(copyNode, inDOMNode);
+          return copyNode;
         }
-        
-        // add rendered element to the DOM and save the template if necessary 
-        copy.innerHTML = res;
-        copy.className = copy.className.replace(/\bminlate\b/,"");
-        mem[id] = mem[id] || source;
-        inDOM.parentNode.replaceChild(copy, inDOM);
-        return copy;
+        throwErr("Invalid template element");
+      } else {// render a template provided as a string
+        if (typeof templateStr == "string") {
+          return render(
+            templateStr,
+            values,
+            startChar,
+            endChar,
+            groupStartChar,
+            groupEndChar,
+            escChar
+          );
+        }
+        throwErr();
+      }
     };
      
 }(document);
